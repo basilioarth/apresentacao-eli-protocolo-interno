@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eli - Protocolo Interno</title>
+<style>
+  :root {
+    --navy-900: #0a1c30;
+    --navy-800: #0f2840;
+    --navy-700: #163655;
+    --navy-100: #e6ecf2;
+    --ink: #13243a;
+    --muted: #5b6b7d;
+    --line: #d5dde6;
+    --paper: #ffffff;
+    --paper-2: #f5f7fa;
+    --gold: #b8933f;
+    --gold-soft: #e9dcb9;
+    --green: #2f6f55;
+    --todo: #b4561f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #05101c; overflow: hidden;
+    font-family: "Segoe UI", "Inter", system-ui, -apple-system, Roboto, Arial, sans-serif; color: var(--ink); }
+
+  /* Palco 16:9 escalado para a tela */
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    transform-origin: center center; }
+  .slide { position: absolute; inset: 0; background: var(--paper); display: none; overflow: hidden; }
+  .slide.active { display: block; }
+
+  /* Elementos comuns */
+  .pad { position: absolute; inset: 0; padding: 120px 150px 110px; display: flex; flex-direction: column; }
+  .kicker { font-size: 26px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+  h1 { font-size: 92px; line-height: 1.05; font-weight: 600; letter-spacing: -.01em; }
+  h2 { font-size: 64px; line-height: 1.1; font-weight: 600; letter-spacing: -.005em; margin-top: 18px; }
+  .lead { font-size: 34px; line-height: 1.45; color: var(--muted); max-width: 1400px; margin-top: 28px; }
+  .rule { width: 96px; height: 4px; background: var(--gold); margin: 36px 0; }
+  .footer { position: absolute; left: 150px; right: 150px; bottom: 48px; display: flex; justify-content: space-between;
+    font-size: 20px; color: var(--muted); letter-spacing: .04em; border-top: 1px solid var(--line); padding-top: 18px; }
+  .dark .footer { color: rgba(255,255,255,.55); border-color: rgba(255,255,255,.15); }
+  .dark { background: var(--navy-900); color: #fff; }
+  .dark .lead { color: rgba(255,255,255,.72); }
+  .todo { outline: 3px dashed var(--todo); outline-offset: 6px; color: var(--todo) !important; }
+
+  /* Capa */
+  .cover { background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 100%); color: #fff; }
+  .cover .pad { justify-content: center; padding-left: 190px; }
+  .cover .bar { position: absolute; left: 0; top: 0; bottom: 0; width: 22px; background: var(--gold); }
+  .cover h1 { font-size: 108px; max-width: 1400px; }
+  .cover .lead { color: rgba(255,255,255,.78); font-size: 38px; }
+  .cover .pad { padding-top: 300px; }
+  .cover .org { position: absolute; left: 190px; top: 90px; display: flex; align-items: center; gap: 32px;
+    font-size: 28px; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.8); }
+  .cover .org img { height: 140px; width: auto; }
+  .org-f { display: flex; align-items: center; gap: 14px; }
+  .org-f img { height: 34px; width: auto; }
+
+  .contact { margin-top: 56px; display: flex; flex-direction: column; gap: 10px; }
+  .contact span { font-size: 22px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-soft); }
+  .contact a { font-size: 44px; font-weight: 600; color: #fff; text-decoration: none; }
+
+  /* Número de destaque */
+  .bignum { display: flex; align-items: center; gap: 90px; margin-top: 60px; }
+  .bignum .n { font-size: 300px; font-weight: 600; line-height: .9; color: var(--navy-800); letter-spacing: -.03em; }
+  .bignum .n small { font-size: 120px; color: var(--gold); }
+  .bignum .t { font-size: 44px; line-height: 1.35; max-width: 820px; }
+  .chips { display: flex; gap: 24px; margin-top: 40px; }
+  .chip { font-size: 34px; font-weight: 600; padding: 16px 34px; border: 2px solid var(--navy-800); border-radius: 6px; color: var(--navy-800); }
+
+  /* Cartões */
+  .cards { display: grid; gap: 48px; margin-top: 60px; }
+  .cards.c2 { grid-template-columns: 1fr 1fr; }
+  .cards.c3 { grid-template-columns: 1fr 1fr 1fr; }
+  .card { background: var(--paper-2); border-top: 6px solid var(--navy-800); padding: 52px 56px; }
+  .card h3 { font-size: 46px; font-weight: 600; margin-bottom: 24px; }
+  .card p { font-size: 31px; line-height: 1.5; color: #33445a; }
+  .card .tag { font-size: 22px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 14px; }
+
+  .card .vars { margin-top: 22px; padding-left: 0; list-style: none; }
+  .card .vars li { font-size: 29px; line-height: 1.45; color: #33445a; padding-left: 26px; position: relative; margin-bottom: 12px; }
+  .card .vars li::before { content: ""; position: absolute; left: 0; top: 19px; width: 12px; height: 3px; background: var(--gold); }
+  .card b { color: var(--ink); font-weight: 600; }
+  .formula { display: flex; flex-direction: column; align-items: center; margin: 6px 0 28px; padding: 26px 16px;
+    background: var(--paper); border: 1px solid var(--line); font-size: 29px; font-weight: 600; color: var(--navy-800); }
+  .formula .div { border-top: 3px solid var(--navy-800); margin-top: 10px; padding-top: 10px; font-weight: 500; }
+
+  .cards.dense { margin-top: 48px; gap: 40px; }
+  .cards.dense .card { padding: 40px 42px; }
+  .cards.dense .card h3 { font-size: 40px; margin-bottom: 20px; }
+  .cards.dense .card p, .cards.dense .vars li { font-size: 27px; }
+  .cards.dense .formula { font-size: 25px; white-space: nowrap; padding: 22px 10px; }
+  /* Fluxo em etapas */
+  .flow { display: flex; align-items: stretch; margin-top: 80px; gap: 0; }
+  .step { flex: 1; position: relative; padding: 0 26px; }
+  .step .num { width: 84px; height: 84px; border-radius: 50%; background: var(--navy-800); color: #fff;
+    font-size: 38px; font-weight: 600; display: grid; place-items: center; position: relative; z-index: 1; }
+  .step::before { content: ""; position: absolute; top: 42px; left: 0; right: 0; height: 2px; background: var(--line); }
+  .step:first-child::before { left: 68px; }
+  .step:last-child::before { right: calc(100% - 68px); }
+  .step h4 { font-size: 36px; font-weight: 600; margin: 36px 0 14px; }
+  .step p { font-size: 28px; line-height: 1.45; color: var(--muted); }
+  .dark .step .num { background: var(--gold); color: var(--navy-900); }
+  .dark .step::before { background: rgba(255,255,255,.2); }
+  .dark .step p { color: rgba(255,255,255,.7); }
+  .note-line { margin-top: auto; font-size: 30px; color: var(--muted); border-left: 6px solid var(--gold); padding: 10px 0 10px 30px; }
+  .dark .note-line { color: rgba(255,255,255,.8); }
+
+  /* Equação de destaque */
+  .equation { display: flex; align-items: center; gap: 36px; margin-top: 70px; font-size: 50px; font-weight: 600; }
+  .equation .box { padding: 36px 48px; border: 2px solid var(--navy-800); border-radius: 6px; }
+  .equation .box.fill { background: var(--navy-800); color: #fff; }
+  .equation .op { color: var(--gold); font-size: 64px; }
+
+  /* Agenda */
+  .agenda { display: grid; grid-template-columns: repeat(5, 1fr); gap: 32px; margin-top: 70px; }
+  .agenda .col { border-top: 4px solid var(--gold); padding-top: 28px; }
+  .agenda h4 { font-size: 32px; font-weight: 600; margin-bottom: 22px; color: #fff; }
+  .agenda li { list-style: none; font-size: 25px; line-height: 1.4; color: rgba(255,255,255,.72); margin-bottom: 14px; }
+  .agenda li b { color: var(--gold); font-weight: 600; margin-right: 8px; }
+
+  /* Slides de vídeo */
+  .video-slide { background: var(--navy-900); color: #fff; }
+  .video-slide .head { position: absolute; left: 80px; right: 80px; top: 44px; height: 110px;
+    display: flex; align-items: center; gap: 36px; }
+  .video-slide .idx { font-size: 64px; font-weight: 600; color: var(--gold); min-width: 110px; letter-spacing: -.02em; }
+  .video-slide .ttl { display: flex; flex-direction: column; gap: 6px; }
+  .video-slide .sec { font-size: 21px; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.55); }
+  .video-slide .ttl h3 { font-size: 46px; font-weight: 600; }
+  .video-slide .cap { margin-left: auto; max-width: 640px; text-align: right; font-size: 24px; line-height: 1.4; color: rgba(255,255,255,.7); }
+  .video-slide .frame { position: absolute; left: 80px; right: 80px; top: 180px; bottom: 60px;
+    display: flex; align-items: center; justify-content: center; }
+  .video-slide video { max-width: 100%; max-height: 100%; background: #000; box-shadow: 0 30px 80px rgba(0,0,0,.45);
+    border: 1px solid rgba(255,255,255,.12); outline: none; }
+
+  /* Diagrama de aprendizado */
+  .loop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 70px; align-items: stretch; }
+  .loop .node { background: var(--paper-2); padding: 40px 36px; margin-right: 56px; position: relative; border-top: 6px solid var(--navy-800); }
+  .loop .node:last-child { margin-right: 0; border-top-color: var(--gold); }
+  .loop .node:not(:last-child)::after { content: "→"; position: absolute; right: -50px; top: 50%; transform: translateY(-50%);
+    font-size: 48px; color: var(--gold); }
+  .loop .node h4 { font-size: 32px; font-weight: 600; margin-bottom: 14px; }
+  .loop .node p { font-size: 26px; line-height: 1.45; color: var(--muted); }
+  .quote { margin-top: auto; font-size: 32px; line-height: 1.5; color: #33445a; background: var(--navy-100); padding: 34px 44px; border-left: 6px solid var(--navy-800); }
+
+  /* Decisão do score */
+  .decision { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: center; margin-top: 70px; gap: 0; }
+  .decision .src { background: var(--navy-800); color: #fff; padding: 46px 52px; }
+  .decision .src h4 { font-size: 38px; font-weight: 600; margin-bottom: 12px; }
+  .decision .src p { font-size: 28px; color: rgba(255,255,255,.75); line-height: 1.45; }
+  .decision .arrow { text-align: center; font-size: 60px; color: var(--gold); }
+  .decision .outs { display: flex; flex-direction: column; gap: 28px; }
+  .decision .out { padding: 32px 40px; border: 2px solid var(--line); }
+  .decision .out h5 { font-size: 32px; font-weight: 600; margin-bottom: 8px; }
+  .decision .out p { font-size: 26px; color: var(--muted); }
+  .decision .out.auto { border-color: var(--green); }
+  .decision .out.auto h5 { color: var(--green); }
+
+  /* Encerramento */
+  .close-list { margin-top: 60px; display: flex; flex-direction: column; gap: 34px; }
+  .close-list div { font-size: 38px; line-height: 1.4; padding-left: 44px; position: relative; color: rgba(255,255,255,.88); }
+  .close-list div::before { content: ""; position: absolute; left: 0; top: 22px; width: 18px; height: 4px; background: var(--gold); }
+
+  /* Interface do apresentador */
+  #progress { position: fixed; left: 0; bottom: 0; height: 4px; background: var(--gold); transition: width .3s; z-index: 10; }
+  #counter { position: fixed; right: 18px; bottom: 12px; font-size: 13px; color: rgba(255,255,255,.45); z-index: 10; font-variant-numeric: tabular-nums; }
+  #toast { position: fixed; left: 50%; top: 24px; transform: translateX(-50%); background: rgba(10,28,48,.92); color: #fff;
+    padding: 10px 20px; border-radius: 6px; font-size: 15px; opacity: 0; transition: opacity .2s; z-index: 20; pointer-events: none; }
+  #notes { position: fixed; left: 0; right: 0; bottom: 0; max-height: 42vh; overflow: auto; background: rgba(8,20,34,.96); color: #e8eef5;
+    padding: 22px 32px 30px; font-size: 18px; line-height: 1.55; display: none; z-index: 15; border-top: 3px solid var(--gold); }
+  #notes.show { display: block; }
+  #notes .lbl { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+  #notes ul { padding-left: 22px; }
+  #help { position: fixed; inset: 0; background: rgba(5,16,28,.9); color: #fff; display: none; place-items: center; z-index: 30; font-size: 18px; }
+  #help.show { display: grid; }
+  #help table { border-collapse: collapse; }
+  #help td { padding: 8px 18px; border-bottom: 1px solid rgba(255,255,255,.12); }
+  #help td:first-child { color: var(--gold); font-weight: 600; text-align: right; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- 1. CAPA -->
+  <section class="slide cover" data-notes="Apresentar-se e contextualizar: sistema desenvolvido para automatizar o atendimento do Protocolo Interno.">
+    <div class="bar"></div>
+    <div class="pad" style="justify-content:flex-start; padding-top:390px">
+      <div class="kicker" style="color:var(--gold-soft)">Escritório de Lógica Integrada - Protocolo Interno</div>
+      <h1 style="margin-top:28px">Automação do atendimento de demandas por e-mail</h1>
+      <div class="rule"></div>
+      <div class="lead">Classificação inteligente, despacho automático no SEI! e aprendizado contínuo</div>
+    </div>
+    <div class="org"><img src="pge.svg" alt="Brasão da PGE-PI">Procuradoria-Geral do Estado do Piauí</div>
+  </section>
+
+  <!-- 2. CONTEXTO: 60% -->
+  <section class="slide" data-notes="<ul><li>Aproximadamente 60% da demanda do Protocolo Interno se enquadra em dois temas: FEAD e Usucapião.</li><li>Ou seja: se resolvermos esses dois temas, atacamos a maior parte do volume.</li></ul>">
+    <div class="pad">
+      <div class="kicker">Contexto</div>
+      <h2>Onde está o volume do Protocolo Interno</h2>
+      <div class="bignum">
+        <div class="n">≈60<small>%</small></div>
+        <div>
+          <div class="t">da demanda recebida concentra-se em apenas dois temas</div>
+          <div class="chips"><span class="chip">FEAD</span><span class="chip">Usucapião</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span class="org-f"><img src="pge.svg" alt="Brasão da PGE-PI">Procuradoria-Geral do Estado do Piauí</span><span>Eli - Protocolo Interno</span></div>
+  </section>
+
+  <!-- 3. OS DOIS TEMAS -->
+  <section class="slide" data-notes="Explicar brevemente cada tema. Manter curto — o foco da apresentação é o fluxo e o sistema.">
+    <div class="pad">
+      <div class="kicker">Contexto</div>
+      <h2>Os dois temas em poucas palavras</h2>
+      <div class="cards c2">
+        <div class="card">
+          <div class="tag">Tema 1</div>
+          <h3>FEAD</h3>
+          <p>Fundo Estadual da Advocacia Dativa, vinculado à PGE-PI, que custeia os honorários dos advogados dativos. É abastecido por 1% dos emolumentos cobrados pelos cartórios, e o Protocolo recebe os comprovantes desses repasses.</p>
+        </div>
+        <div class="card">
+          <div class="tag">Tema 2</div>
+          <h3>Usucapião</h3>
+          <p>Reconhecimento da propriedade de um imóvel pela posse prolongada. O Estado é comunicado sobre os pedidos para se manifestar quanto a eventual interesse no bem.</p>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span class="org-f"><img src="pge.svg" alt="Brasão da PGE-PI">Procuradoria-Geral do Estado do Piauí</span><span>Eli - Protocolo Interno</span></div>
+  </section>
+
+  <!-- 4. FLUXO ATUAL -->
+  <section class="slide" data-notes="O fluxo de atendimento das duas demandas é praticamente o mesmo. Percorrer as quatro etapas.">
+    <div class="pad">
+      <div class="kicker">O fluxo atual</div>
+      <h2>Temas diferentes, caminhos iguais</h2>
+      <div class="flow">
+        <div class="step"><div class="num">1</div><h4>Identificar</h4><p>Reconhecer que o e-mail recebido trata de FEAD ou Usucapião</p></div>
+        <div class="step"><div class="num">2</div><h4>Criar processo</h4><p>Abrir um processo correspondente no SEI!</p></div>
+        <div class="step"><div class="num">3</div><h4>Instruir</h4><p>Incluir todos os anexos e o comprovante de recebimento do e-mail</p></div>
+        <div class="step"><div class="num">4</div><h4>Encaminhar</h4><p>Enviar o processo à caixa responsável no SEI!</p></div>
+      </div>
+      <div class="note-line">Um trabalho manual, repetitivo e executado dezenas de vezes</div>
+    </div>
+    <div class="footer"><span class="org-f"><img src="pge.svg" alt="Brasão da PGE-PI">Procuradoria-Geral do Estado do Piauí</span><span>Eli - Protocolo Interno</span></div>
+  </section>
+
+  <!-- 5. POR QUE AUTOMATIZAR -->
+  <section class="slide" data-notes="<ul><li>Demanda repetitiva com passos bem definidos é sinal verde para automação — essa foi a ideia desde o início.</li><li>Automatizando FEAD e Usucapião, otimizamos ~60% da demanda; a equipe passa a se dedicar aos casos mais complexos.</li><li>Ressaltar: o sistema não se limita a esses dois temas. Foi construído de forma flexível para incluir novos temas, de ponta a ponta, conforme a necessidade.</li></ul>">
+    <div class="pad">
+      <div class="kicker">A oportunidade</div>
+      <h2>Um sinal verde para automação</h2>
+      <div class="equation">
+        <div class="box">Demanda repetitiva</div><div class="op">+</div>
+        <div class="box">Passos bem definidos</div><div class="op">=</div>
+        <div class="box fill">Automação</div>
+      </div>
+      <div class="cards c3" style="margin-top:70px">
+        <div class="card"><h3>≈60%</h3><p>da demanda do Protocolo Interno otimizada</p></div>
+        <div class="card"><h3>Foco</h3><p>A equipe dedica seu tempo aos casos mais complexos</p></div>
+        <div class="card"><h3>Expansível</h3><p>Novos temas podem ser incluídos de ponta a ponta, conforme a necessidade</p></div>
+      </div>
+    </div>
+    <div class="footer"><span class="org-f"><img src="pge.svg" alt="Brasão da PGE-PI">Procuradoria-Geral do Estado do Piauí</span><span>Eli - Protocolo Interno</span></div>
+  </section>
+
+  <!-- 6. ROTEIRO DA DEMONSTRAÇÃO -->
+  <section class="slide dark" data-notes="Mostrar o caminho que vamos percorrer na demonstração: do e-mail que chega até a gestão do sistema.">
+    <div class="pad">
+      <div class="kicker">Demonstração</div>
+      <h2>O caminho de um e-mail no sistema</h2>
+      <div class="agenda">
+        <div class="col"><h4>Classificação</h4><ul><li><b>01</b>Workflow no n8n</li><li><b>02</b>Monitoramento em tempo real</li></ul></div>
+        <div class="col"><h4>Validação e aprendizado</h4><ul><li><b>03</b>Aprovação</li><li><b>04</b>Reclassificação</li><li><b>05</b>Embeddings</li></ul></div>
+        <div class="col"><h4>Despacho e resposta</h4><ul><li><b>06</b>Despacho ao SEI!</li><li><b>07</b>Resposta ao e-mail</li></ul></div>
+        <div class="col"><h4>Automação</h4><ul><li><b>08</b>Score de confiança</li><li><b>09</b>Modo automático</li></ul></div>
+        <div class="col"><h4>Gestão</h4><ul><li><b>10</b>Histórico</li><li><b>11</b>Novas classes</li><li><b>12</b>Dashboard</li></ul></div>
+      </div>
+    </div>
+    <div class="footer"><span class="org-f"><img src="pge.svg" alt="Brasão da PGE-PI">Procuradoria-Geral do Estado do Piauí</span><span>Eli - Protocolo Interno</span></div>
+  </section>
+
+  <!-- V1 -->
+  <section class="slide video-slide" data-video="01-workflow-classificacao-n8n.mp4" data-notes="Workflow do n8n que lê o e-mail, aciona a IA e grava a classificação.">
+    <div class="head"><div class="idx">01</div><div class="ttl"><span class="sec">Classificação</span><h3>Workflow de classificação no n8n</h3></div>
+      <div class="cap">Cada e-mail recebido é lido, persistido e classificado pela IA</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- V2 -->
+  <section class="slide video-slide" data-video="02-monitoramento-classificacoes.mp4" data-notes="As classificações chegam na tela de monitoramento; status e big numbers se atualizam sozinhos.">
+    <div class="head"><div class="idx">02</div><div class="ttl"><span class="sec">Classificação</span><h3>Monitoramento em tempo real</h3></div>
+      <div class="cap">Status e indicadores atualizados automaticamente a cada nova classificação</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- V3 -->
+  <section class="slide video-slide" data-video="03-detalhes-aprovar-email.mp4" data-notes="Abrir os detalhes do e-mail e aprovar a classificação sugerida. Observar os indicadores mudando.">
+    <div class="head"><div class="idx">03</div><div class="ttl"><span class="sec">Validação e aprendizado</span><h3>Aprovação de uma classificação</h3></div>
+      <div class="cap">O servidor confere os detalhes do e-mail e confirma a classificação</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- V4 -->
+  <section class="slide video-slide" data-video="04-detalhes-reclassificacao.mp4" data-notes="Quando a IA erra, o servidor desaprova e indica a classe correta. Essa correção não se perde — é o que veremos a seguir.">
+    <div class="head"><div class="idx">04</div><div class="ttl"><span class="sec">Validação e aprendizado</span><h3>Reclassificação</h3></div>
+      <div class="cap">Quando a IA erra, o humano corrige e isso fica registrado</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- V5 -->
+  <section class="slide video-slide" data-video="05-workflow-embeddings.mp4" data-notes="A reclassificação dispara este workflow, que transforma o e-mail corrigido em um embedding e o guarda no banco.">
+    <div class="head"><div class="idx">05</div><div class="ttl"><span class="sec">Validação e aprendizado</span><h3>Workflow de criação de embeddings</h3></div>
+      <div class="cap">Disparado pela reclassificação: o e-mail corrigido vira memória do sistema</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- 5.1 COMO O SISTEMA APRENDE -->
+  <section class="slide" data-notes="Antes de classificar, o workflow faz uma busca semântica por um e-mail semelhante que já tenha tido a classificação corrigida. Se encontrar, as informações dessa correção são injetadas no contexto da IA — ela aprende com os erros do passado.">
+    <div class="pad">
+      <div class="kicker">Validação e aprendizado</div>
+      <h2>Como cada correção melhora as próximas classificações</h2>
+      <div class="loop">
+        <div class="node"><h4>Novo e-mail</h4><p>Chega para ser classificado</p></div>
+        <div class="node"><h4>Busca semântica</h4><p>Procura no banco um e-mail semelhante cuja classificação foi corrigida</p></div>
+        <div class="node"><h4>Contexto</h4><p>Se encontrado, a correção é injetada no contexto da IA</p></div>
+        <div class="node"><h4>Classificação</h4><p>A IA decide considerando o erro cometido no passado</p></div>
+      </div>
+      <div class="quote">Cada reclassificação feita pela equipe passa a orientar a IA em casos parecidos: o sistema aprende com os próprios erros.</div>
+    </div>
+    <div class="footer"><span class="org-f"><img src="pge.svg" alt="Brasão da PGE-PI">Procuradoria-Geral do Estado do Piauí</span><span>Eli - Protocolo Interno</span></div>
+  </section>
+
+  <!-- V6 -->
+  <section class="slide video-slide" data-video="06-despacho-classificacao.mp4" data-notes="Despachar a classificação: o sistema cria o processo no SEI!, inclui anexos e comprovante e encaminha à caixa responsável. Mostrar o processo dentro do SEI!.">
+    <div class="head"><div class="idx">06</div><div class="ttl"><span class="sec">Despacho e resposta</span><h3>Despacho e processo no SEI!</h3></div>
+      <div class="cap">Classificação aprovada, processo criado e preenchido</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- V7 -->
+  <section class="slide video-slide" data-video="07-responder-email.mp4" data-notes="Responder o e-mail de origem diretamente pelo sistema.">
+    <div class="head"><div class="idx">07</div><div class="ttl"><span class="sec">Despacho e resposta</span><h3>Resposta ao e-mail</h3></div>
+      <div class="cap">O remetente recebe o retorno diretamente pelo sistema</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- 8. MODO MANUAL x AUTOMÁTICO -->
+  <section class="slide" data-notes="<ul><li>Tudo o que vimos até aqui foi feito no modo manual, com uma pessoa aprovando cada etapa.</li><li>Existe um workflow que, a cada classificação, aciona uma função matemática criada pela equipe.</li><li>Essa função devolve um score; dependendo dele, o despacho é feito sozinho.</li></ul>">
+    <div class="pad">
+      <div class="kicker">Automação</div>
+      <h2>O modo de despacho</h2>
+      <div class="lead">A cada classificação, uma função matemática calcula um <b style="color:var(--ink)">score de confiança da classificação</b> (confiabilidade líquida). É ele que decide se o despacho pode seguir sozinho.</div>
+      <div class="decision">
+        <div class="src"><h4>Score de confiança da classificação</h4><p>Calculado automaticamente a cada e-mail classificado</p></div>
+        <div class="arrow">→</div>
+        <div class="outs">
+          <div class="out auto"><h5>Score suficiente</h5><p>Despacho automático ao SEI!</p></div>
+          <div class="out"><h5>Score insuficiente</h5><p>Segue para validação humana</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span class="org-f"><img src="pge.svg" alt="Brasão da PGE-PI">Procuradoria-Geral do Estado do Piauí</span><span>Eli - Protocolo Interno</span></div>
+  </section>
+
+  <!-- 8.1 A FUNÇÃO DE SCORE -->
+  <section class="slide" data-notes="<ul><li>O modo de aprovação é decidido pelo score de confiabilidade líquida.</li><li>Fórmula original: Score = ((QCASCH × 2) − (QCCH × 4)) / TCJA — QCASCH: aprovadas sem correção humana; QCCH: corrigidas por humanos; TCJA: total de classificações na janela de análise.</li><li>Errar custa mais caro que acertar: cada correção apaga dois acertos.</li><li>Score acima de 1,0 → aprovação automática.</li><li>Exemplo: 10 classificações, 9 acertos e 1 correção → (18 − 4) / 10 = 1,4 → automático. Com 8 acertos e 2 correções → (16 − 8) / 10 = 0,8 → humano.</li></ul>">
+    <div class="pad">
+      <div class="kicker">Automação</div>
+      <h2>A confiabilidade líquida e sua autorregulação</h2>
+      <div class="cards c3 dense">
+        <div class="card"><div class="tag">O que entra</div><h3>O histórico recente</h3>
+          <p>Olhamos as últimas classificações (a <b>janela de análise</b> — JA) e contamos duas coisas:</p>
+          <ul class="vars">
+            <li><b>Acertos:</b> aprovadas sem correção humana</li>
+            <li><b>Correções:</b> corrigidas por um humano</li>
+          </ul></div>
+        <div class="card"><div class="tag">Como calcula</div><h3>A conta</h3>
+          <div class="formula"><span>(Acertos × 2) − (Correções × 4)</span><span class="div">Total de classificações na JA</span></div>
+          <p>Cada correção pesa o <b>dobro</b> de um acerto. Se o resultado passar de <b>1</b>, a aprovação vira automática.</p></div>
+        <div class="card" style="border-top-color:var(--gold)"><div class="tag">Como se ajusta</div><h3>Sempre atualizado</h3>
+          <p>A janela anda a cada nova classificação. Se a IA começa a errar, as correções derrubam o score e a aprovação <b>volta para o humano</b>. Quando ela volta a acertar, o modo automático é retomado.</p></div>
+      </div>
+    </div>
+    <div class="footer"><span class="org-f"><img src="pge.svg" alt="Brasão da PGE-PI">Procuradoria-Geral do Estado do Piauí</span><span>Eli - Protocolo Interno</span></div>
+  </section>
+
+  <!-- V8a -->
+  <section class="slide video-slide" data-video="08-score-modo-despacho.mp4" data-notes="Acompanhamento em tempo real do score e do modo de despacho.">
+    <div class="head"><div class="idx">08</div><div class="ttl"><span class="sec">Automação</span><h3>Score e modo de despacho</h3></div>
+      <div class="cap">Acompanhamento em tempo real</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- V9 -->
+  <section class="slide video-slide" data-video="09-classificacao-modo-automatico.mp4" data-notes="Com o modo automático ativo, o e-mail é classificado e despachado sem intervenção humana quando o score permite.">
+    <div class="head"><div class="idx">09</div><div class="ttl"><span class="sec">Automação</span><h3>Fluxo no modo automático</h3></div>
+      <div class="cap">Do e-mail ao processo no SEI!, sem intervenção humana</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- V10 -->
+  <section class="slide video-slide" data-video="10-historico.mp4" data-notes="Histórico completo de cada e-mail: o que aconteceu, quando e por quem.">
+    <div class="head"><div class="idx">10</div><div class="ttl"><span class="sec">Gestão</span><h3>Histórico</h3></div>
+      <div class="cap">Rastreabilidade de cada ação realizada sobre o e-mail</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- V11a -->
+  <section class="slide video-slide" data-video="11-nova-classe-parte-1.mp4" data-notes="Visão do gestor: sugerir uma nova classe quando surge um novo tipo de demanda.">
+    <div class="head"><div class="idx">11</div><div class="ttl"><span class="sec">Gestão · Visão do gestor</span><h3>Sugestão de nova classe</h3></div>
+      <div class="cap">Um novo tipo de demanda pode ser proposto pelo gestor</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- V11b -->
+  <section class="slide video-slide" data-video="11-nova-classe-parte-2.mp4" data-notes="Visão do administrador: aprovar a sugestão e incluir o prompt da nova classe. É assim que o sistema cresce para além de FEAD e Usucapião.">
+    <div class="head"><div class="idx">11</div><div class="ttl"><span class="sec">Gestão · Visão do administrador</span><h3>Aprovação e inclusão do prompt</h3></div>
+      <div class="cap">O administrador aprova e a nova classe passa a ser reconhecida</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- V12 -->
+  <section class="slide video-slide" data-video="12-dashboard.mp4" data-notes="Dashboard com a visão consolidada da operação.">
+    <div class="head"><div class="idx">12</div><div class="ttl"><span class="sec">Gestão</span><h3>Dashboard</h3></div>
+      <div class="cap">Visão consolidada da operação do Protocolo Interno</div></div>
+    <div class="frame"><video preload="metadata" controls muted playsinline></video></div>
+  </section>
+
+  <!-- ENCERRAMENTO -->
+  <section class="slide dark" data-notes="Retomar os ganhos antes de agradecer.">
+    <div class="pad">
+      <div class="kicker">Encerramento</div>
+      <h2>Em resumo</h2>
+      <div class="close-list">
+        <div>≈60% da demanda do Protocolo Interno atendida de forma automatizada.</div>
+        <div>Validação humana quando necessário, com aprendizado a cada correção.</div>
+        <div>Processos criados e encaminhados no SEI! com redução de etapas manuais.</div>
+        <div>Estrutura preparada para incorporar novos temas.</div>
+      </div>
+    </div>
+    <div class="footer"><span class="org-f"><img src="pge.svg" alt="Brasão da PGE-PI">Procuradoria-Geral do Estado do Piauí</span><span>Eli - Protocolo Interno</span></div>
+  </section>
+
+  <!-- AGRADECIMENTOS -->
+  <section class="slide cover" data-notes="Agradecer e abrir para perguntas.">
+    <div class="bar"></div>
+    <div class="pad">
+      <div class="kicker" style="color:var(--gold-soft)">Escritório de Lógica Integrada - Protocolo Interno</div>
+      <h1 style="margin-top:28px">Obrigado!</h1>
+      <div class="rule"></div>
+      <div class="lead">Dúvidas e sugestões são bem-vindas.</div>
+      <div class="contact"><span>Contato:</span><a href="mailto:ti@pge.pi.gov.br">ti@pge.pi.gov.br</a></div>
+    </div>
+    <div class="org"><img src="pge.svg" alt="Brasão da PGE-PI">Procuradoria-Geral do Estado do Piauí</div>
+  </section>
+
+</div>
+
+<div id="progress"></div>
+<div id="counter"></div>
+<div id="toast"></div>
+<div id="notes"><div class="lbl">Notas do apresentador</div><div id="notes-body"></div></div>
+<div id="help"><table>
+  <tr><td>→ · Espaço · PgDn</td><td>Próximo slide</td></tr>
+  <tr><td>← · PgUp</td><td>Slide anterior</td></tr>
+  <tr><td>Home · End</td><td>Primeiro · último slide</td></tr>
+  <tr><td>P · K</td><td>Reproduzir / pausar vídeo</td></tr>
+  <tr><td>R</td><td>Reiniciar vídeo</td></tr>
+  <tr><td>J · L</td><td>Voltar · avançar 10 s</td></tr>
+  <tr><td>+ · −</td><td>Velocidade do vídeo</td></tr>
+  <tr><td>A</td><td>Ativar / desativar autoplay</td></tr>
+  <tr><td>N</td><td>Notas do apresentador</td></tr>
+  <tr><td>F</td><td>Tela cheia</td></tr>
+  <tr><td>H · ?</td><td>Esta ajuda</td></tr>
+</table></div>
+
+<script>
+(function () {
+  const stage = document.getElementById('stage');
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const progress = document.getElementById('progress');
+  const counter = document.getElementById('counter');
+  const toastEl = document.getElementById('toast');
+  const notes = document.getElementById('notes');
+  const notesBody = document.getElementById('notes-body');
+  const help = document.getElementById('help');
+  let current = 0, autoplay = true, rate = 1, toastTimer;
+
+  // Os vídeos ficam na mesma pasta deste arquivo
+  slides.forEach(s => {
+    const file = s.dataset.video;
+    if (file) s.querySelector('video').src = encodeURIComponent(file);
+  });
+
+  function fit() {
+    const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+    stage.style.transform = `translate(-50%, -50%) scale(${k})`;
+  }
+
+  function toast(msg) {
+    toastEl.textContent = msg; toastEl.style.opacity = 1;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.style.opacity = 0, 1400);
+  }
+
+  const videoOf = i => slides[i] && slides[i].querySelector('video');
+
+  function go(i) {
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    const prev = videoOf(current);
+    if (prev) prev.pause();
+    slides[current].classList.remove('active');
+    current = i;
+    slides[current].classList.add('active');
+    const v = videoOf(current);
+    if (v) { v.playbackRate = rate; if (autoplay) v.play().catch(() => {}); }
+    progress.style.width = ((current + 1) / slides.length * 100) + '%';
+    counter.textContent = (current + 1) + ' / ' + slides.length;
+    notesBody.innerHTML = slides[current].dataset.notes || '<i>Sem notas.</i>';
+    history.replaceState(null, '', '#' + (current + 1));
+  }
+
+  document.addEventListener('keydown', e => {
+    const v = videoOf(current);
+    const k = e.key;
+    let handled = true;
+    if (['ArrowRight', 'PageDown', ' ', 'ArrowDown'].includes(k)) go(current + 1);
+    else if (['ArrowLeft', 'PageUp', 'ArrowUp'].includes(k)) go(current - 1);
+    else if (k === 'Home') go(0);
+    else if (k === 'End') go(slides.length - 1);
+    else if ((k === 'p' || k === 'k') && v) { v.paused ? v.play() : v.pause(); }
+    else if (k === 'r' && v) { v.currentTime = 0; v.play(); }
+    else if (k === 'j' && v) v.currentTime = Math.max(0, v.currentTime - 10);
+    else if (k === 'l' && v) v.currentTime = Math.min(v.duration || 0, v.currentTime + 10);
+    else if (k === '+' || k === '=') { rate = Math.min(3, +(rate + .25).toFixed(2)); if (v) v.playbackRate = rate; toast('Velocidade ' + rate + '×'); }
+    else if (k === '-' || k === '_') { rate = Math.max(.5, +(rate - .25).toFixed(2)); if (v) v.playbackRate = rate; toast('Velocidade ' + rate + '×'); }
+    else if (k === 'a') { autoplay = !autoplay; toast('Autoplay ' + (autoplay ? 'ativado' : 'desativado')); }
+    else if (k === 'n') notes.classList.toggle('show');
+    else if (k === 'f') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+    else if (k === 'h' || k === '?') help.classList.toggle('show');
+    else if (k === 'Escape') { help.classList.remove('show'); notes.classList.remove('show'); }
+    else handled = false;
+    if (handled) { e.preventDefault(); e.stopPropagation(); if (document.activeElement) document.activeElement.blur(); }
+  }, true);
+
+  addEventListener('resize', fit);
+  addEventListener('hashchange', () => {
+    const n = parseInt(location.hash.slice(1), 10);
+    if (Number.isFinite(n) && n - 1 !== current) go(n - 1);
+  });
+  fit();
+  const start = parseInt(location.hash.slice(1), 10);
+  slides[0].classList.add('active');
+  go(Number.isFinite(start) ? start - 1 : 0);
+  if (!Number.isFinite(start)) toast('Pressione H para ver os atalhos');
+})();
+</script>
+</body>
+</html>
